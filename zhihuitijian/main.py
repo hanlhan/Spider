@@ -3,7 +3,7 @@
 '''
 Author: harry lu
 Date: 2023-04-28 14:17:50
-LastEditTime: 2023-05-04 16:25:58
+LastEditTime: 2023-05-04 21:21:53
 LastEditors: harry lu
 Description: 爬取智慧体检
 FilePath: /Spider/zhihuitijian/main.py
@@ -80,16 +80,19 @@ def get_menu_and_list():
 def get_detail():
     for file in os.listdir('data'):
         if file.endswith('.json'):
-            print('正在爬取{}'.format(file))
+            name = Path(file).stem
             data = json.load(open('data/{}'.format(file), 'r', encoding='utf-8'))
-            for item in data['data']['items']:
+            for item in data['data']['list']:
+                print('正在爬取{}-{}'.format(file, item['diag_id']))
                 diag_id = item['diag_id']
-                if Path('detail/{}.json'.format(diag_id)).exists():
+                diag_name = item['diag_name']
+                if Path('detail/{}_{}_{}.json'.format(name, diag_name, diag_id)).exists():
                     continue
                 response_detail = requests.get('http://81.71.41.57:8800/manager/api/dictdiag/diag_detail_get?diag_id='+str(diag_id), headers=headers)
                 detaildata_json = json.loads(response_detail.text)
-                json.dump(detaildata_json, open('detail/{}.json'.format(diag_id), 'w', encoding='utf-8'), ensure_ascii=False)
-                time.sleep(random.randint(6, 15))
+                diag_name = diag_name.replace('/', ' ')
+                json.dump(detaildata_json, open('detail/{}_{}_{}.json'.format(name, diag_name, diag_id), 'w', encoding='utf-8'), ensure_ascii=False)
+                time.sleep(random.randint(4, 9))
 
 if __name__ == "__main__":
     # get_menu_and_list()
