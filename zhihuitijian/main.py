@@ -3,7 +3,7 @@
 '''
 Author: harry lu
 Date: 2023-04-28 14:17:50
-LastEditTime: 2023-05-04 21:21:53
+LastEditTime: 2023-05-06 13:22:38
 LastEditors: harry lu
 Description: 爬取智慧体检
 FilePath: /Spider/zhihuitijian/main.py
@@ -86,14 +86,26 @@ def get_detail():
                 print('正在爬取{}-{}'.format(file, item['diag_id']))
                 diag_id = item['diag_id']
                 diag_name = item['diag_name']
+                diag_name = diag_name.replace('/', ' ')
                 if Path('detail/{}_{}_{}.json'.format(name, diag_name, diag_id)).exists():
                     continue
                 response_detail = requests.get('http://81.71.41.57:8800/manager/api/dictdiag/diag_detail_get?diag_id='+str(diag_id), headers=headers)
+                if response_detail.text == '':
+                    print('正在爬取{}-{}失败'.format(file, item['diag_id']))
+                    continue
                 detaildata_json = json.loads(response_detail.text)
-                diag_name = diag_name.replace('/', ' ')
                 json.dump(detaildata_json, open('detail/{}_{}_{}.json'.format(name, diag_name, diag_id), 'w', encoding='utf-8'), ensure_ascii=False)
                 time.sleep(random.randint(4, 9))
+
+def delete_no_success():
+    for file in os.listdir('detail'):
+        if file.endswith('.json'):
+            data = json.load(open('detail/{}'.format(file), 'r', encoding='utf-8'))
+            if data['status'] == "401":
+                print('正在删除{}'.format(file))
+                os.remove('detail/{}'.format(file))
 
 if __name__ == "__main__":
     # get_menu_and_list()
     get_detail()
+    # delete_no_success()
