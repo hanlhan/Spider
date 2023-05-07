@@ -3,7 +3,7 @@
 '''
 Author: harry lu
 Date: 2023-04-28 14:17:50
-LastEditTime: 2023-05-06 13:22:38
+LastEditTime: 2023-05-07 19:29:48
 LastEditors: harry lu
 Description: 爬取智慧体检
 FilePath: /Spider/zhihuitijian/main.py
@@ -82,6 +82,8 @@ def get_detail():
         if file.endswith('.json'):
             name = Path(file).stem
             data = json.load(open('data/{}'.format(file), 'r', encoding='utf-8'))
+            if name == 'menudata':
+                continue
             for item in data['data']['list']:
                 print('正在爬取{}-{}'.format(file, item['diag_id']))
                 diag_id = item['diag_id']
