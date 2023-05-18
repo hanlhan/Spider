@@ -20,35 +20,22 @@ from pathlib import Path
 
 # from bs4 import BeautifulSoup
 
-# http://81.71.41.57:8800/manager/api/dictdiag/diag_menu_get 疾病目录
-# http://81.71.41.57:8800/manager/api/dictdiag/diag_list_get?diag_class_id=934&start=0&page_size=15&keywords= 疾病列表
-# http://81.71.41.57:8800/manager/api/dictdiag/diag_detail_get?diag_id=8462 疾病详情
 
-# http://81.71.41.57:8800/manager/api/dictitem/item_menu_get 项目目录
-# http://81.71.41.57:8800/manager/api/dictitem/item_list_get?item_class_id=&item_branch_id=&keywords=&start=0&page_size=15 项目列表
-# http://81.71.41.57:8800/manager/api/dictitem/item_info_get?item_id=2051 项目详情
+
 
 # http://81.71.41.57:8800/manager/api/dictunion/examdept_list_get 科室列表
 # http://81.71.41.57:8800/manager/api/dictunion/union_list_get?exam_dept_id=80&start=0&page_size=15 组合列表
 # http://81.71.41.57:8800/manager/api/dictunion/item_list_get?union_id=2932 组合详情
 
+# http://81.71.41.57:8800/manager/api/package/package_category 套餐分类
+# http://81.71.41.57:8800/manager/api/package/dict_package_list?pagesize=999&pkg_class_item_id=15769 套餐列表
+# http://81.71.41.57:8800/manager/api/package/dict_package_detail?pkg_id=1571 套餐详细内容
 
-# diag_id id
-# diag_name 诊断名称
-# diag_code 诊断编码
-# diag_gender 性别 0-暂无 1-男 2-女
-# diag_type_name 诊断类型
-# diag_branch_name 所属分支
-# status 状态 0-有效 1-停用
 
-# diag_advise 诊断建议
-# diag_ail_explain 诊断解释
-# diag_ail_group_explain 团体解释
-# diag_group_advise 团体建议
-# diag_keywords 诊断关键字
 
-# item_class_name 分类名称
-# item_branch_name 所属分支
+
+
+
 
 #
 
@@ -72,10 +59,11 @@ base_item_info = "http://81.71.41.57:8800/manager/api/dictitem/item_info_get?ite
 
 base_dept_list = "http://81.71.41.57:8800/manager/api/dictunion/examdept_list_get"
 base_union_list = "http://81.71.41.57:8800/manager/api/dictunion/union_list_get?exam_dept_id={}&start={}&page_size=15"
-base_union_detail = (
-    "http://81.71.41.57:8800/manager/api/dictunion/item_list_get?union_id={}"
-)
+base_union_detail = "http://81.71.41.57:8800/manager/api/dictunion/item_list_get?union_id={}"
 
+base_package_cate = "http://81.71.41.57:8800/manager/api/package/package_category"
+base_package_list = "http://81.71.41.57:8800/manager/api/package/dict_package_list?pagesize=999&pkg_class_item_id={}&start={}"
+base_package_detail = "http://81.71.41.57:8800/manager/api/package/dict_package_detail?pkg_id={}"
 
 def get_menu_and_list():
     response_menu = requests.get(base_menu_url, headers=headers)
@@ -316,6 +304,92 @@ def get_union_detail():
                 )
                 time.sleep(random.randint(4, 9))
 
+
+def get_package_list():
+    if not Path("package/package_cate.json").exists():
+        response_text = requests.get(base_package_cate, headers=headers)
+        package_cate_json = json.loads(response_text.text)
+        json.dump(
+            package_cate_json,
+            open("package/package_cate.json", "w", encoding="utf-8"),
+            ensure_ascii=False,
+        )
+
+    package_cate_json = json.load(open("package/package_cate.json", "r", encoding="utf-8"))
+    for data in package_cate_json["data"]:
+        package_name = data['name']
+        childs = data['child']
+        for child in childs:
+            child_name = child['name']
+            child_id = child['pkg_class_item_id']
+            package_list_res = requests.get(
+                base_package_list.format(child_id, 0), headers=headers
+            )
+            package_list_json = json.loads(package_list_res.text)
+            if ('total' not in package_list_json["data"]):
+                json.dump(
+                    item_lists_json,
+                    open(
+                        "package/data/{}_{}_{}.json".format(package_name, child_name, 0),
+                        "w",
+                        encoding="utf-8",
+                    ),
+                    ensure_ascii=False,
+                )
+                continue
+            total = package_list_json["data"]["total"]
+            for i in range(total // 99 + 1):
+                print("正在爬取{} {}的第{}页".format(package_name, child_name, i))
+                if Path("package/data/{}_{}_{}.json".format(package_name, child_name, i)).exists():
+                    continue
+                item_lists = requests.get(
+                    base_package_list.format(child_id, i * 15), headers=headers
+                )
+                item_lists_json = json.loads(item_lists.text)
+                json.dump(
+                    item_lists_json,
+                    open(
+                        "package/data/{}_{}_{}.json".format(package_name, child_name, i),
+                        "w",
+                        encoding="utf-8",
+                    ),
+                    ensure_ascii=False,
+                )
+                time.sleep(random.randint(6, 15))
+
+def get_package_detail():
+    for file in os.listdir("package/data"):
+        if file.endswith(".json"):
+            data = json.load(open("package/data/{}".format(file), "r", encoding="utf-8"))
+            if data["status"] == "401":
+                print("正在删除{}".format(file))
+                os.remove("item_data/{}".format(file))
+            for item in data["data"]["list"]:
+                item_id = item["id"]
+                pkg_class_name = item["pkg_class_name"]
+                pkg_class_item_name = item['pkg_class_item_name']
+                pkg_class_name = pkg_class_name.replace("/", " ")
+                path_file = Path("package/detail/{}_{}_{}.json".format(pkg_class_item_name, pkg_class_name, item_id))
+                print('正在爬取{} {}'.format(pkg_class_item_name, pkg_class_name))
+                if path_file.exists():
+                    t = json.load(path_file.open("r", encoding="utf-8"))
+                    if t["status"] == "401":
+                        print("正在删除{}".format(path_file))
+                        os.remove(path_file)
+                    else:
+                        continue
+                response_detail = requests.get(
+                    base_package_detail.format(item_id), headers=headers
+                )
+                item_detail_json = json.loads(response_detail.text)
+                json.dump(
+                    item_detail_json,
+                    path_file.open("w", encoding="utf-8"),
+                    ensure_ascii=False,
+                )
+                time.sleep(random.randint(4, 9))
+
+
 if __name__ == "__main__":
     # get_menu_and_list()
     # get_detail()
@@ -325,4 +399,7 @@ if __name__ == "__main__":
     # get_item_info()
 
     # get_dept_list()
-    get_union_detail()
+    # get_union_detail()
+
+    # get_package_list()
+    get_package_detail()

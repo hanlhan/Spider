@@ -4,6 +4,7 @@ images_temp
 .idea
 .vscode
 ENV
+huaxiaozhuan/huaxiaozhuan
 
 *.pdf
 *.html
