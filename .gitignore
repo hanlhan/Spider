@@ -7,6 +7,8 @@ ENV
 
 *.pdf
 *.html
+*.zip
+*.json
 
 ZEALER*
 磐创*
