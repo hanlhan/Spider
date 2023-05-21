@@ -18,27 +18,6 @@ import re
 import json
 from pathlib import Path
 
-# from bs4 import BeautifulSoup
-
-
-
-
-# http://81.71.41.57:8800/manager/api/dictunion/examdept_list_get 科室列表
-# http://81.71.41.57:8800/manager/api/dictunion/union_list_get?exam_dept_id=80&start=0&page_size=15 组合列表
-# http://81.71.41.57:8800/manager/api/dictunion/item_list_get?union_id=2932 组合详情
-
-# http://81.71.41.57:8800/manager/api/package/package_category 套餐分类
-# http://81.71.41.57:8800/manager/api/package/dict_package_list?pagesize=999&pkg_class_item_id=15769 套餐列表
-# http://81.71.41.57:8800/manager/api/package/dict_package_detail?pkg_id=1571 套餐详细内容
-
-
-
-
-
-
-
-#
-
 
 headers = {
     "Host": "1.71.41.57:8800",
